@@ -1,0 +1,25 @@
+# Environments
+venv/
+.venv/
+env/
+
+# Python cache and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local datasets and model weights
+data/
+best_model.pt
+*.pt
+*.pth
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+
+# User requested
+/bestpractice
+/best practice/
+best practice/

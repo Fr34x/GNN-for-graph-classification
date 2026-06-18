@@ -1,0 +1,61 @@
+import random
+import numpy as np
+import torch
+from torch_geometric.datasets import TUDataset
+from torch_geometric.loader import DataLoader
+
+def set_seed(seed=2025):
+    """
+    Ensure reproducibility by seeding all random number generators.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+class ConstantNodeFeatures(object):
+    """
+    Transform to replace node features with a constant vector of 1.0 (for feature ablation).
+    """
+    def __call__(self, data):
+        data.x = torch.ones((data.num_nodes, 1), dtype=torch.float)
+        return data
+
+def get_dataset(use_features=True):
+    """
+    Load the PROTEINS dataset.
+    If use_features is False, node features are replaced with a constant vector of ones.
+    """
+    if use_features:
+        # TUDataset returns node attributes (dimension 3) by default
+        dataset = TUDataset(root='data/TUDataset', name='PROTEINS', use_node_attr=True)
+    else:
+        transform = ConstantNodeFeatures()
+        dataset = TUDataset(root='data/TUDataset', name='PROTEINS', use_node_attr=True, transform=transform)
+    return dataset
+
+def get_dataloaders(dataset, batch_size=64, seed=2025):
+    """
+    Splits the dataset reproducibly into train (80%), validation (10%), and test (10%) splits.
+    Returns PyG DataLoaders.
+    """
+    # Use PyTorch Generator for reproducible random_split
+    g = torch.Generator().manual_seed(seed)
+    num_graphs = len(dataset)
+    train_len = int(0.8 * num_graphs)
+    val_len = int(0.1 * num_graphs)
+    test_len = num_graphs - train_len - val_len
+    
+    train_set, val_set, test_set = torch.utils.data.random_split(
+        dataset, [train_len, val_len, test_len], generator=g
+    )
+    
+    # Use PyTorch Geometric DataLoader (handles batching of graph data structures)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+    
+    return train_loader, val_loader, test_loader
