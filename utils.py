@@ -24,14 +24,31 @@ class ConstantNodeFeatures(object):
         data.x = torch.ones((data.num_nodes, 1), dtype=torch.float)
         return data
 
+class NormalizeContinuousFeature(object):
+    """
+    Transform to normalize Feature 0 (continuous node attribute) in the dataset.
+    """
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+        
+    def __call__(self, data):
+        data.x = data.x.clone()
+        data.x[:, 0] = (data.x[:, 0] - self.mean) / (self.std + 1e-6)
+        return data
+
 def get_dataset(use_features=True):
     """
     Load the PROTEINS dataset.
     If use_features is False, node features are replaced with a constant vector of ones.
     """
     if use_features:
-        # TUDataset returns node attributes (dimension 3) by default
         dataset = TUDataset(root='data/TUDataset', name='PROTEINS', use_node_attr=True)
+        # Calculate mean and std of Feature 0 across the entire dataset for z-score normalization
+        feat0 = dataset.x[:, 0]
+        mean = feat0.mean().item()
+        std = feat0.std().item()
+        dataset.transform = NormalizeContinuousFeature(mean, std)
     else:
         transform = ConstantNodeFeatures()
         dataset = TUDataset(root='data/TUDataset', name='PROTEINS', use_node_attr=True, transform=transform)
@@ -54,7 +71,7 @@ def get_dataloaders(dataset, batch_size=64, seed=2025):
     )
     
     # Use PyTorch Geometric DataLoader (handles batching of graph data structures)
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, generator=g)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
     

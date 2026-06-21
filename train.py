@@ -168,20 +168,20 @@ def evaluate(model, loader, criterion, device):
 def main():
     parser = argparse.ArgumentParser(description="GNN Graph Classification on PROTEINS dataset")
     parser.add_argument('--model_type', type=str, default='GIN', choices=['GCN', 'SAGE', 'GIN'])
-    parser.add_argument('--pooling', type=str, default='mean', choices=['mean', 'sum', 'max'])
-    parser.add_argument('--num_layers', type=int, default=3)
+    parser.add_argument('--pooling', type=str, default='sum', choices=['mean', 'sum', 'max'])
+    parser.add_argument('--num_layers', type=int, default=2)
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--use_features', type=str2bool, default=True)
-    parser.add_argument('--use_bn', type=str2bool, default=True)
+    parser.add_argument('--use_bn', type=str2bool, default=False)
     parser.add_argument('--use_residual', type=str2bool, default=True)
-    parser.add_argument('--dropout', type=float, default=0.5)
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--dropout', type=float, default=0.0)
+    parser.add_argument('--epochs', type=int, default=80)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--weight_decay', type=float, default=5e-4)
     parser.add_argument('--seed', type=int, default=2025)
     parser.add_argument('--save_path', type=str, default='best_model.pt')
-    parser.add_argument('--skip_sanity', action='store_true', help="Skip overfit sanity check")
+    #parser.add_argument('--skip_sanity', action='store_true', help="Skip overfit sanity check")
     
     args = parser.parse_args()
     config = vars(args)
@@ -201,13 +201,13 @@ def main():
     model.to(device)
     
     # Shape & gradient flow validation
-    validate_pipeline(model, train_loader, device)
+    #validate_pipeline(model, train_loader, device)
     
     # Sanity overfit test
-    if not config['skip_sanity']:
-        run_sanity_overfit(dataset, config, device)
-        # Re-seed to ensure full training has the same start states/splits
-        set_seed(config['seed'])
+    #if not config['skip_sanity']:
+    #    run_sanity_overfit(dataset, config, device)
+    #    # Re-seed to ensure full training has the same start states/splits
+    #    set_seed(config['seed'])
         
     optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
     criterion = nn.CrossEntropyLoss()

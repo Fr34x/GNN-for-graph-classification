@@ -52,7 +52,7 @@ def run_experiment(config):
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            best_model_state = {k: v.cpu() for k, v in model.state_dict().items()}
+            best_model_state = {k: v.clone().cpu() for k, v in model.state_dict().items()}
             
     # Load best model for test evaluation
     model.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
@@ -70,12 +70,12 @@ def run_experiment(config):
 def main():
     default_config = {
         'model_type': 'GIN',
-        'pooling': 'mean',
-        'num_layers': 3,
+        'pooling': 'sum',
+        'num_layers': 2,
         'hidden_dim': 64,
-        'dropout': 0.5,
+        'dropout': 0.0,
         'use_features': True,
-        'use_bn': True,
+        'use_bn': False,
         'use_residual': True,
         'epochs': 80,
         'batch_size': 64,
@@ -207,6 +207,8 @@ def main():
         'Dropout Only': {'dropout': 0.5, 'use_bn': False, 'use_residual': False},
         'BatchNorm Only': {'dropout': 0.0, 'use_bn': True, 'use_residual': False},
         'Residual Only': {'dropout': 0.0, 'use_bn': False, 'use_residual': True},
+        'Residual + Dropout (0.2)': {'dropout': 0.2, 'use_bn': False, 'use_residual': True},
+        'Residual + Dropout (0.5)': {'dropout': 0.5, 'use_bn': False, 'use_residual': True},
         'Full Regularization': {'dropout': 0.5, 'use_bn': True, 'use_residual': True}
     }
     reg_results = {}
